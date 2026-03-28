@@ -1,1 +1,1 @@
-# ubisoft-payslip-renamer
+# payslip-renamer
