@@ -1,10 +1,3 @@
-use nom::{
-    IResult, Parser,
-    bytes::complete::{tag, take_until},
-    character::complete::u32,
-    sequence::preceded,
-};
-
 #[derive(Debug, PartialEq)]
 pub struct Date {
     pub year: u32,
@@ -18,21 +11,15 @@ impl Date {
     }
 }
 
-fn parse_date_impl(input: &str) -> IResult<&str, Date> {
-    const TAG: &str = "DATE PAYABLE: ";
-    const SEPARATOR: &str = "/";
-    let (input, _) = take_until(TAG).parse(input)?;
-    let (input, (year, _, month, _, day)) =
-        preceded(tag(TAG), (u32, tag(SEPARATOR), u32, tag(SEPARATOR), u32)).parse(input)?;
-
-    Ok((input, Date::new(year, month, day)))
-}
-
 pub fn parse_date(input: &str) -> Option<Date> {
-    match parse_date_impl(input) {
-        Ok((_, date)) => Some(date),
-        Err(_) => None,
-    }
+    let re = regex::Regex::new(r"DATE PAYABLE: (\d{4})/(\d{2})/(\d{2})").unwrap();
+    let caps = re.captures(input)?;
+
+    Some(Date::new(
+        caps[1].parse().ok()?,
+        caps[2].parse().ok()?,
+        caps[3].parse().ok()?,
+    ))
 }
 
 #[cfg(test)]
