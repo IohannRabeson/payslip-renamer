@@ -11,8 +11,8 @@ impl Date {
     }
 }
 
-pub fn parse_date(input: &str) -> Option<Date> {
-    let re = regex::Regex::new(r"DATE PAYABLE: (\d{4})/(\d{2})/(\d{2})").unwrap();
+pub fn parse_date(input: &str, pattern: &str) -> Option<Date> {
+    let re = regex::Regex::new(pattern).unwrap();
     let caps = re.captures(input)?;
 
     Some(Date::new(
@@ -33,6 +33,8 @@ mod tests {
     #[case("KJDSFLJGH DATE PAYABLE KjhasKJflh", None)]
     #[case("KJDSFLJGH DATE PAYABLE 2026/03/ KjhasKJflh", None)]
     fn test_parse_date(#[case] input: &str, #[case] expected_result: Option<Date>) {
-        assert_eq!(expected_result, parse_date(input));
+        const PATTERN: &str = r"DATE PAYABLE: (\d{4})/(\d{2})/(\d{2})";
+
+        assert_eq!(expected_result, parse_date(input, PATTERN));
     }
 }
