@@ -1,6 +1,7 @@
 mod date;
 use anyhow::{Context, anyhow};
 use clap::{Parser, Subcommand};
+use log::{debug, error, info, warn};
 use pdf_oxide::PdfDocument;
 use crate::date::Date;
 use std::{path::{Path, PathBuf}, time::Duration};
@@ -12,6 +13,8 @@ use notify_debouncer_full::new_debouncer;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+    #[arg(short, long)]
+    verbose: bool,
 }
 
 const DEFAULT_DATE_REGEX: &str = r"DATE PAYABLE: (\d{4})/(\d{2})/(\d{2})";
@@ -56,7 +59,43 @@ enum Commands {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    match cli.command {
+    setup_log(cli.verbose)?;
+    match execute_command(cli.command) {
+        Ok(()) => (),
+        Err(error) => {
+            error!("Command failed: {error}");
+        }
+    }
+    Ok(())
+}
+
+fn setup_log(verbose: bool) -> anyhow::Result<()> {
+    let level = if verbose {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+
+    let mut dispatch = fern::Dispatch::new()
+        .level(level)
+        .filter(|metadata| metadata.target().starts_with("payslip_renamer"))
+        .chain(std::io::stdout());
+
+    let os_logger: Box<dyn log::Log> = Box::new(oslog::OsLogger::new("com.irabeson.payslip-renamer"));
+
+    dispatch = dispatch.chain(os_logger);
+
+    dispatch.apply()?;
+
+    if verbose {
+        info!("Verbose mode enabled");
+    }
+
+    Ok(())
+}
+
+fn execute_command(command: Commands) -> anyhow::Result<()> {
+    match command {
         Commands::Print { file } => {
             println!("{}", get_text(file)?);
         }
@@ -70,16 +109,16 @@ fn main() -> anyhow::Result<()> {
         }
         Commands::Monitor { directory, regex } => {
             monitor(directory, |file_path: &Path| {
-                println!("File added: {}", file_path.display());
                 match rename(file_path, &regex) {
                     Ok(()) => {},
                     Err(error) => {
-                        eprintln!("Failed to rename: {error}");
+                        warn!("Failed to rename '{}': {error}", file_path.display());
                     },
                 }
             })?;
         }
     }
+
     Ok(())
 }
 
@@ -120,12 +159,12 @@ fn monitor(directory: impl AsRef<Path>, on_file_added: impl Fn(&Path)) -> anyhow
         .unwrap();
     let (signal_sender, signal_receiver) = crossbeam_channel::bounded(1);
     let signal_thread_handle = std::thread::spawn(move || {
-        println!("Signals thread starts");
+        debug!("Signals thread starts");
         for _ in &mut signals {
             let _ = signal_sender.send(());
             break;
         }
-        println!("Signals thread shutdowns");
+        debug!("Signals thread shutdowns");
     });
     let directory = directory.as_ref();
     let (event_sender, event_receiver) = crossbeam_channel::bounded(1024);
@@ -133,7 +172,7 @@ fn monitor(directory: impl AsRef<Path>, on_file_added: impl Fn(&Path)) -> anyhow
     
     debouncer.watch(directory, RecursiveMode::Recursive)?;
 
-    println!("Monitoring started");
+    debug!("Monitoring started");
     loop {
         crossbeam_channel::select! {
             recv(signal_receiver) -> _signal => break,
@@ -153,8 +192,7 @@ fn monitor(directory: impl AsRef<Path>, on_file_added: impl Fn(&Path)) -> anyhow
             }
         }
     }
-    println!("Monitoring stopped");
-    
+    debug!("Monitoring stopped");
     signal_thread_handle.join().unwrap();
     Ok(())
 }
