@@ -48,13 +48,11 @@ enum Commands {
         regex: String,
     },
     /// Monitor a folder for PDF to rename.
-    Monitor {
-        #[arg()]
-        directory: PathBuf,
-        /// The regex to extract the date.
-        #[arg(short, long, default_value = DEFAULT_DATE_REGEX)]
-        regex: String,
-    }
+    /// 
+    /// This command expect 2 environment variables:
+    /// - PAYSLIP_RENAMER_DIRECTORY: the path to the directory to watch
+    /// - PAYSLIP_RENAMER_DATE_PATTERN: Optional, the pattern to extract the date from the PDF
+    Monitor,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -107,7 +105,12 @@ fn execute_command(command: Commands) -> anyhow::Result<()> {
         Commands::Rename { file, regex } => {
             rename(file, &regex)?;
         }
-        Commands::Monitor { directory, regex } => {
+        Commands::Monitor => {
+            const ENV_VAR_DIRECTORY: &str = "PAYSLIP_RENAMER_DIRECTORY";
+            let directory = PathBuf::from(std::env::var(ENV_VAR_DIRECTORY).with_context(|| format!("Missing environment variable {}", ENV_VAR_DIRECTORY))?);
+            let regex = std::env::var("PAYSLIP_RENAMER_DATE_PATTERN").unwrap_or(DEFAULT_DATE_REGEX.to_string());
+            debug!("Directory to watch: {}", directory.display());
+            debug!("Date extraction regex: {regex}");
             monitor(directory, |file_path: &Path| {
                 match rename(file_path, &regex) {
                     Ok(()) => {},
