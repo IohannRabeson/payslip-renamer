@@ -11,3 +11,6 @@ Syntax: https://docs.rs/regex/latest/regex/#syntax
 The `monitor` command expects two environment variables:
  - `PAYSLIP_RENAMER_DIRECTORY`: the directory to watch for new payslip
  - `PAYSLIP_RENAMER_DATE_PATTERN`: optional, the pattern to extract the date, it expects three captures, example: `DATE PAYABLE: (\d{4})/(\d{2})/(\d{2})`
+
+## PDF text extraction crates I tried
+ - `oxidize_pdf`: fails to extract all the values in my payslips
