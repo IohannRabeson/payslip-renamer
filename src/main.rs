@@ -185,7 +185,7 @@ fn monitor(directory: impl AsRef<Path>, on_file_added: impl Fn(&Path)) -> anyhow
                         matches!(event.event.kind, notify::event::EventKind::Create(notify::event::CreateKind::File))
                         || matches!(event.event.kind, notify::event::EventKind::Modify(_))
                     }) {
-                        if let Some(event) = debounced_events.first() {
+                        for event in debounced_events {
                             for path in &event.paths {
                                 on_file_added(&path);
                             }
