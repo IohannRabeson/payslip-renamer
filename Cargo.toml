@@ -18,3 +18,8 @@ fern = "0.7.1"
 
 [dev-dependencies]
 rstest = { version = "0.26.1", default-features = false, features = ["crate-name"] }
+
+# Usage: cargo run --profile=release-with-debug
+[profile.release-with-debug]
+inherits = "release"
+debug = true
