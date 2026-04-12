@@ -9,7 +9,7 @@ use notify::RecursiveMode;
 use notify_debouncer_full::new_debouncer;
 
 #[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[command(version = option_env!("PAYSLIP_RENAMER_VERSION").unwrap_or("<Local Build>"), about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
