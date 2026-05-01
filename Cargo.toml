@@ -9,7 +9,7 @@ anyhow = "1.0.102"
 clap = { version = "4.6.0", features = ["derive"] }
 pdf_oxide = "0.3.17"
 regex = "1.12.3"
-signal-hook = "0.4.3"
+signal-hook = "0.4.4"
 crossbeam-channel = "0.5.15"
 notify = { version = "8.2.0", features = ["crossbeam-channel"] }
 notify-debouncer-full = { version = "0.7.0", features = ["crossbeam-channel"] }
