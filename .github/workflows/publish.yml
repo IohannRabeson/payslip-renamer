@@ -1,0 +1,58 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    permissions:
+      contents: write
+    runs-on: macos-latest
+    env:
+      rust-target: aarch64-apple-darwin
+      executable_output_file_path: "target/aarch64-apple-darwin/final/payslip-renamer"
+      zip_output_file_path: "payslip-renamer_${{ github.ref_name }}_aarch64.zip"
+      sha256_output_file_path: "sha256-aarch64.txt"
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          toolchain: stable
+          targets: ${{ env.rust-target }}
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: release
+      - name: Build
+        run: cargo build --profile=final --verbose --locked --target ${{ env.rust-target }}
+      - name: Copy Binary
+        run: cp ${{ env.executable_output_file_path }} .
+      - name: Zip
+        run: zip ${{ env.zip_output_file_path }} payslip-renamer README.md
+      - name: Upload Release Asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ github.ref_name }} ${{ env.zip_output_file_path }}
+      - name: Compute SHA256
+        run: shasum -a 256 ${{ env.zip_output_file_path }} | awk '{print $1}' > ${{ env.sha256_output_file_path }}
+      - name: Upload SHA256 artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sha256-aarch64
+          path: ${{ env.sha256_output_file_path }}
+
+  update-formula:
+    if: github.event.release.prerelease == false
+    needs: publish
+    uses: ./.github/workflows/homebrew.yml
+    secrets:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

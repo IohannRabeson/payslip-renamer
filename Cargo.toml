@@ -24,3 +24,8 @@ rstest = { version = "0.26.1", default-features = false, features = ["crate-name
 [profile.release-with-debug]
 inherits = "release"
 debug = true
+
+[profile.final]
+inherits = "release"
+incremental = false
+codegen-units = 1
