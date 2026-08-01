@@ -126,7 +126,7 @@ fn execute_command(command: Commands) -> anyhow::Result<()> {
 }
 
 fn get_text(pdf_file_path: impl AsRef<Path>) -> anyhow::Result<String> {
-    let mut doc = PdfDocument::open(&pdf_file_path)?;
+    let doc = PdfDocument::open(&pdf_file_path)?;
 
     Ok(doc.extract_all_text()?)
 }
