@@ -33,6 +33,8 @@ jobs:
         with:
           key: release
       - name: Build
+        env:
+          PAYSLIP_RENAMER_VERSION: ${{  github.ref_name }}
         run: cargo build --profile=final --verbose --locked --target ${{ env.rust-target }}
       - name: Copy Binary
         run: cp ${{ env.executable_output_file_path }} .
