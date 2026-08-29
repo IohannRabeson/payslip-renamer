@@ -58,11 +58,9 @@ enum Commands {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     setup_log(cli.verbose)?;
-    match execute_command(cli.command) {
-        Ok(()) => (),
-        Err(error) => {
-            error!("Command failed: {error}");
-        }
+    if let Err(error) = execute_command(cli.command) {
+        error!("Command failed: {error}");
+        std::process::exit(1);
     }
     Ok(())
 }
